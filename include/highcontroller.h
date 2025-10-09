@@ -100,6 +100,8 @@ class DataBuffer {
    void SetData(const T &newData){
     std::unique_lock<std::shared_mutex> lock(mutex);
     data= std::make_shared<T>(newData);
+    if(data == nullptr)
+      printf("set data failed\n");
    }
    std::shared_ptr<const T> GetData(){
     std::shared_lock<std::shared_mutex> lock(mutex);
@@ -113,6 +115,9 @@ class DataBuffer {
     std::shared_ptr<T> data;
     std::shared_mutex mutex;
 };
+DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+DataBuffer<joydata> joy_buffer_;
+DataBuffer<NingImuData> imu_buffer_;
 class HighController 
 {
    
@@ -128,7 +133,7 @@ public:
     }
     static HighController* instance; // 静态指针，用于调用非静态方法
 
- 
+
     bool init(ControlMode mode );
 
 
@@ -194,9 +199,9 @@ public:
     std::array<MotorCmd,18>  usermotorcmd;
     
     DataBuffer<RobotMotorCmd::MotorCmdArray> motor_cmd_buffer_;
-    DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
-    DataBuffer<joydata> joy_buffer_;
-    DataBuffer<NingImuData> imu_buffer_;
+    // DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+    // DataBuffer<joydata> joy_buffer_;
+    // DataBuffer<NingImuData> imu_buffer_;
 
 
     std::thread send_thread_;

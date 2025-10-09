@@ -15,6 +15,7 @@ namespace legged
 
   HighController* HighController::instance = nullptr;
 
+
   bool HighController::init(ControlMode mode)
   {
     char buf[256];
@@ -27,7 +28,11 @@ namespace legged
     instance = this;
    
     RobotSetMode::SetMode cmode;
-    cmode.mode(1);
+    if(mode == ControlMode::LOWMODE )
+      cmode.mode(2);
+    else if(mode == ControlMode::HIGHMODE )
+      cmode.mode(1);
+
     ddswrapper.publishModeData(cmode);
     
     ddswrapper.subscribeRobotStatus([] (const  RobotStatus::StatusData& ddsdata){
@@ -43,9 +48,7 @@ namespace legged
           data[i].motor_id = state.motor_id();
           data[i].error = state.error();
           data[i].temperature = state.temperature();
-    
-          //std::cout<< "motorstate  id: "<< motorstate_[i].motor_id<<";pos " << motorstate_[i].pos << ";vel " << motorstate_[i].vel
-          //<< ";tau "<<motorstate_[i].tau<<";error " <<motorstate_[i].error<<";temperature "<<motorstate_[i].temperature<<std::endl;
+
           i++;
         }
         for(int i=0;i<4;i++)
@@ -142,7 +145,7 @@ namespace legged
             auto now = Clock::now();
             long long timestamp = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
             cmdarray.timestamp() = timestamp;
-	    //printf("send dds cmd\n");
+
             ddswrapper.publishMotorCmdData(cmdarray);
           }
           std::this_thread::sleep_for(std::chrono::microseconds(2000));
@@ -226,9 +229,9 @@ namespace legged
     Command  cmd;
     auto now = Clock::now();
     long starttimestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-    //printf("process timestamp %d \n",starttimestamp);
+    const std::shared_ptr<const std::array<MotorState,18>> ms =motor_state_buffer_.GetData();
 
-  
+ 
     static int action =0;
     cmd.x = 0.2;
     cmd.y=0;
@@ -242,7 +245,7 @@ namespace legged
     else if(remote_data.button[8] == 1)
       action = 3;  
     set_axes(cmd.x ,cmd.yaw,action);
-    //printf("remote button[9]   %d\n",remote_data.button[9]);
+
 
     
 

@@ -19,9 +19,11 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|arm|aarch64")
   add_definitions(-DRK3588)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/aarch64)
   set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib/aarch64)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/lib/aarch64")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)|(^i686)")
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64)
   set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib/x86_64)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/lib/x86_64")
 endif()
 
 find_package(Eigen3 REQUIRED)
@@ -38,7 +40,7 @@ include_directories(${EIGEN3_INCLUDE_DIRS})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH "$ORIGIN/lib/aarch64")
+
 add_executable(lowcontrol lowcontroller.cpp)
 
 add_executable(highcontrol highcontroller.cpp )
@@ -53,7 +55,6 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|arm|aarch64")
   target_link_libraries(lowcontrol 
   Threads::Threads 
   onnxruntime  
-  rknnrt  
   ${LIB_DIR}/aarch64/libdriver.a
   ${LIB_DIR}/aarch64/libyaml-cpp.a
   ${LIB_DIR}/aarch64/libddsc.so
@@ -67,7 +68,6 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|arm|aarch64")
   ddsc
   ddscxx  )
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)|(^i686)")
-  set_target_propertise(highcontrol PROPERTIES INSTALL_RPATH "$ORIGIN/lib/x86_64")
   target_link_directories(highcontrol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64)
   target_link_directories(lowcontrol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64)
   target_link_libraries(lowcontrol  

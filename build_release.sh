@@ -12,12 +12,8 @@ case $get_arch in
 esac
 mkdir build
 cd build
-if [ $arch = "arm64" ];then
-    cmake -DRK3588=ON ..
-else
-    cmake ..
-fi
-make
+cmake ..
+make -j4
 cd ..
 rm -rf build
 chmod +x highcontrol
