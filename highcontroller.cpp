@@ -1,11 +1,5 @@
 #include "highcontroller.h"
-//#include "controllerbase.h"
 #include "RotationTools.h"
-#include <algorithm>
-#include "yaml-cpp/yaml.h"
-#include <iostream>
-#include <chrono>
-#include <thread>
 #include <unistd.h>
 #include <stdio.h>
 #include "aolion_driver.h"
@@ -276,31 +270,6 @@ namespace legged
 
       }
     }
-    // const std::shared_ptr<const joydata> jdata =joy_buffer_.GetData();
-    // if(jdata)
-    // {
-    //   memcpy(remote_data.button,&(*jdata).button[0],sizeof(remote_data.button));
-    //   memcpy(remote_data.axes,&(*jdata).axes[0],sizeof(remote_data.axes));
-    //   // for(int i = 0;i<14;i++)
-    //   // {
-       
-    //   //   if(remote_data.button[i] == 1)
-    //   //      printf("button %d  press\n",i);
-    //   // }   
-    // }else 
-    //   printf("joydata null\n");
-    //   for(int i=0;i<14;i++)
-    //   {
-    //     if(remote_data.button[i] == 0)
-    //     {
-    //       key_updown[i] = 0;
-    //       key_inuse[i] = 0;
-    //     }else if(remote_data.button[i] == 1)
-    //     {
-    //       key_updown[i] = 1;
-  
-    //     }
-    //   }  
     ControlCmd action = ControlCmd::DEFAULT;
     cmd.x = 0.0;
     cmd.y=0;
@@ -373,14 +342,7 @@ namespace legged
     
     set_axes(cmd.x ,cmd.yaw,(int)action,fileindex);
     //printf("remote button[9]   %d\n",remote_data.button[9]);
-
-    
-
   }
-  
-  
-  
-  
 
  }// namespace legged
 
