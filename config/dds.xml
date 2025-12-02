@@ -9,7 +9,7 @@
         </General>
 
         <Discovery>
-            	<ParticipantIndex>0</ParticipantIndex>
+            	<ParticipantIndex>auto</ParticipantIndex>
             	<Peers>
             	    <Peer address="192.168.55.102"/>
             	</Peers>
@@ -17,6 +17,9 @@
 
 
         <!-- 启用共享内存优化（本机通信）
+                    <Ports>
+                <DomainIdOffset>10000</DomainIdOffset>
+            </Ports>   
         <SharedMemory>
             <Enable>true</Enable>
             <LogLevel>WARNING</LogLevel>
