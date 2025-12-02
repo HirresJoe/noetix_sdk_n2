@@ -10,6 +10,6 @@ namespace YAML {
 YAML_CPP_API std::string FpToString(float v, size_t precision = 0);
 YAML_CPP_API std::string FpToString(double v, size_t precision = 0);
 YAML_CPP_API std::string FpToString(long double v, size_t precision = 0);
-}
+} // namespace YAML
 
 #endif

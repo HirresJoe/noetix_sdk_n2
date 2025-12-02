@@ -16,4 +16,3 @@
 #include "dds/dds.h"
 
 #endif /* DDSC_DDS_H */
-

@@ -17,6 +17,7 @@ if [ $arch = "arm64" ];then
 else
     cmake ..
 fi
+
 make -j4
 cd ..
 rm -rf build
