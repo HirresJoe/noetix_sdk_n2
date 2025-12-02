@@ -1,11 +1,5 @@
 #include "highcontroller.h"
-//#include "controllerbase.h"
 #include "RotationTools.h"
-#include <algorithm>
-#include "yaml-cpp/yaml.h"
-#include <iostream>
-#include <chrono>
-#include <thread>
 #include <unistd.h>
 #include <stdio.h>
 #include "aolion_driver.h"
