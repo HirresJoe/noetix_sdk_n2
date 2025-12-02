@@ -8,13 +8,19 @@
 #include <thread>
 #include <unistd.h>
 #include <stdio.h>
+#include "aolion_driver.h"
 using namespace org::eclipse::cyclonedds;
 
 namespace legged
 {
-
+  DataBuffer<RobotMotorCmd::MotorCmdArray> motor_cmd_buffer_;
+  DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+  DataBuffer<joydata> joy_buffer_;
+  DataBuffer<NingImuData> imu_buffer_;
   HighController* HighController::instance = nullptr;
-
+  AoLionDriver remotedriver;
+  int longd = 0;
+  int shortd = 0;
 
   bool HighController::init(ControlMode mode)
   {
@@ -26,13 +32,9 @@ namespace legged
     mode_ = WorkMode::DEFAULT;
 
     instance = this;
-   
+    remotedriver.init("/dev/input/js0",115200);
     RobotSetMode::SetMode cmode;
-    if(mode == ControlMode::LOWMODE )
-      cmode.mode(2);
-    else if(mode == ControlMode::HIGHMODE )
-      cmode.mode(1);
-
+    cmode.mode(1);
     ddswrapper.publishModeData(cmode);
     
     ddswrapper.subscribeRobotStatus([] (const  RobotStatus::StatusData& ddsdata){
@@ -48,7 +50,9 @@ namespace legged
           data[i].motor_id = state.motor_id();
           data[i].error = state.error();
           data[i].temperature = state.temperature();
-
+    
+          //std::cout<< "motorstate  id: "<< motorstate_[i].motor_id<<";pos " << motorstate_[i].pos << ";vel " << motorstate_[i].vel
+          //<< ";tau "<<motorstate_[i].tau<<";error " <<motorstate_[i].error<<";temperature "<<motorstate_[i].temperature<<std::endl;
           i++;
         }
         for(int i=0;i<4;i++)
@@ -68,7 +72,12 @@ namespace legged
         }
           memcpy(remote_data.button,&ddsdata.joydata().button(),sizeof(remote_data.button));
           memcpy(remote_data.axes,&ddsdata.joydata().axes(),sizeof(remote_data.axes));
+          // for(int i = 0;i<14;i++)
+          // {
            
+          //   if(remote_data.button[i] == 1)
+          //      printf("button %d  press\n",i);
+          // }     
               
       HighController::Instance()->set_robotstatusdata(data,imudata,remote_data);
     });   
@@ -112,6 +121,12 @@ namespace legged
   }
   void HighController::set_robotstatusdata( std::array<MotorState,18>   data,NingImuData imudata,joydata joy_data)
   {
+    // for(int i = 0;i<14;i++)
+    // {
+     
+    //   if(joy_data.button[i] == 1)
+    //      printf("button %d  press\n",i);
+    // }   
     motor_state_buffer_.SetData(data);
     imu_buffer_.SetData(imudata);
     joy_buffer_.SetData(joy_data);
@@ -142,10 +157,11 @@ namespace legged
             cmdarray.controlcmd().axes()[0] = mc->controlcmd().axes().at(0);
             cmdarray.controlcmd().axes()[1] = mc->controlcmd().axes().at(1);
             cmdarray.controlcmd().action() = mc->controlcmd().action();
+            cmdarray.controlcmd().data() = mc->controlcmd().data();
             auto now = Clock::now();
             long long timestamp = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
             cmdarray.timestamp() = timestamp;
-
+	    //printf("send dds cmd\n");
             ddswrapper.publishMotorCmdData(cmdarray);
           }
           std::this_thread::sleep_for(std::chrono::microseconds(2000));
@@ -171,7 +187,7 @@ namespace legged
   {
      return remote_data_;
   }
-  void HighController::set_axes(double  ver,double hor,int action)
+  void HighController::set_axes(double  ver,double hor,int action,uint16_t index)
   {
    
      RobotMotorCmd::MotorCmdArray cmdarray;
@@ -195,6 +211,22 @@ namespace legged
      cmdarray.controlcmd().axes()[0] = hor;
      cmdarray.controlcmd().axes()[1] = ver;
      cmdarray.controlcmd().action() = action;
+     //cmdarray.controlcmd().data() = data;
+     if(action == 9 || action == 11)
+     {
+      cmdarray.controlcmd().data() = index;
+  
+     }
+     if(action == 5 )
+     {
+        if(longd == 1)
+          cmdarray.controlcmd().data()  = 0;//long dance
+        else if(shortd == 1)
+          cmdarray.controlcmd().data()  = 1; //short dance
+     }
+    // printf(" cmdarray.controlcmd().data() %d\n",cmdarray.controlcmd().data()); 
+    //  else 
+    //    cmdarray.controlcmd().data() = 0; 
      motor_cmd_buffer_.SetData(cmdarray);
 
   }
@@ -218,34 +250,129 @@ namespace legged
     return motorstate;
   }
 
-  
+  uint16_t fileindex=0;
   
   void HighController::process()
   {
     
     static int keyflag[14];
     joydata remote_data;
- 
+    static char key_updown[14],key_inuse[14];
     Command  cmd;
+    
     auto now = Clock::now();
     long starttimestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-    const std::shared_ptr<const std::array<MotorState,18>> ms =motor_state_buffer_.GetData();
+    //printf("process timestamp %d \n",starttimestamp);
+    remote_data =  remotedriver.getremotedata();
+    for(int i=0;i<14;i++)
+    {
+      if(remote_data.button[i] == 0)
+      {
+        key_updown[i] = 0;
+        key_inuse[i] = 0;
+      }else if(remote_data.button[i] == 1)
+      {
+        key_updown[i] = 1;
 
- 
-    static int action =0;
-    cmd.x = 0.2;
+      }
+    }
+    // const std::shared_ptr<const joydata> jdata =joy_buffer_.GetData();
+    // if(jdata)
+    // {
+    //   memcpy(remote_data.button,&(*jdata).button[0],sizeof(remote_data.button));
+    //   memcpy(remote_data.axes,&(*jdata).axes[0],sizeof(remote_data.axes));
+    //   // for(int i = 0;i<14;i++)
+    //   // {
+       
+    //   //   if(remote_data.button[i] == 1)
+    //   //      printf("button %d  press\n",i);
+    //   // }   
+    // }else 
+    //   printf("joydata null\n");
+    //   for(int i=0;i<14;i++)
+    //   {
+    //     if(remote_data.button[i] == 0)
+    //     {
+    //       key_updown[i] = 0;
+    //       key_inuse[i] = 0;
+    //     }else if(remote_data.button[i] == 1)
+    //     {
+    //       key_updown[i] = 1;
+  
+    //     }
+    //   }  
+    ControlCmd action = ControlCmd::DEFAULT;
+    cmd.x = 0.0;
     cmd.y=0;
-    cmd.yaw =0.3;
-    if(remote_data.button[5] == 1)
-      action = 0;
-    else if(remote_data.button[6] == 1)
-      action = 1;
-    else if(remote_data.button[7] == 1)
-      action = 2;
-    else if(remote_data.button[8] == 1)
-      action = 3;  
-    set_axes(cmd.x ,cmd.yaw,action);
-
+    cmd.yaw =0.0;
+    if(key_updown[Key2]== 0  && key_updown[Key5] ==1 &&(key_inuse[Key5] == 0))
+    {
+      action = ControlCmd::STARTTEACH;
+      key_inuse[Key5] = 1;
+    }
+    else if((key_updown[Key6] == 1) && key_updown[Key2]== 0 && (key_inuse[Key6]==0))
+    {
+      action = ControlCmd::SWING;
+      key_inuse[Key6] =1;
+    }
+    else if((key_updown[Key7] == 1) && key_updown[Key2]== 0 && (key_inuse[Key7]==0))
+    {
+       action = ControlCmd::SHAKE;
+       key_inuse[Key7] = 1;
+    }
+    else if((key_updown[Key8] == 1)  && key_updown[Key2]== 0  && (key_inuse[Key8]==0))
+    {
+      action = ControlCmd::CHEER;
+      key_inuse[Key8] =1; 
+    }
+      
+    else if((key_updown[Key9] == 1) && (key_inuse[Key9]==0))
+    {
+      key_inuse[Key9] = 1;
+      action = ControlCmd::START;
+    }
+    else if(key_updown[Key10]== 1 && (key_inuse[Key10]==0) )
+    {
+      action = ControlCmd::SWITCH;
+      key_inuse[Key10] =1;
+      printf("SWITCH \n");
+    }
+    else if(key_updown[Key2]== 1  && key_updown[Key5] ==1 &&(key_inuse[Key5] == 0))
+    {
+      action = ControlCmd::WALK;
+      key_inuse[Key5] = 1;
+      printf("WALK \n");
+    }
+    else if(key_updown[Key1]== 1  && key_updown[Key6] ==1 &&(key_inuse[Key6] == 0))
+    {
+      action = ControlCmd::SAVETEACH;
+      key_inuse[Key6] = 1;
+      fileindex++;
+      printf("SAVETEACH \n");
+    }
+    else if(key_updown[Key1]== 1  && key_updown[Key7] ==1 &&(key_inuse[Key7] == 0))
+    {
+      action = ControlCmd::ENDTEACH;
+      key_inuse[Key7] = 1;
+      printf("ENDTEACH \n");
+    }
+    else if(key_updown[Key1]== 1  && key_updown[Key8] ==1 &&(key_inuse[Key8] == 0))
+    {
+      action = ControlCmd::PLAYTEACH;
+      key_inuse[Key8] = 1;
+      fileindex =1;
+      printf("PLAYTEACH \n");
+    }
+    else if(key_updown[Key2]== 1  && key_updown[Key8] ==1 &&(key_inuse[Key8] == 0))
+    {
+      action = ControlCmd::DANCE;
+      key_inuse[Key8] = 1;
+      longd =1;
+      printf("DANCE \n");
+    }
+    
+    set_axes(cmd.x ,cmd.yaw,(int)action,fileindex);
+    //printf("remote button[9]   %d\n",remote_data.button[9]);
 
     
 
@@ -264,7 +391,7 @@ int main()
   bool ret = true;
   getcwd(buf,sizeof(buf)); 
   std::string path=std::string(buf);
-  std::string ddsxml = "file://"+path+"/config/dds.xml";
+  std::string ddsxml = "file://"+path+"/config/dds_local.xml";
   setenv("CYCLONEDDS_URI",ddsxml.c_str(),1);
   printf("cur path is %s\n",path.c_str());
   legged::HighController highcontroller;
