@@ -391,7 +391,7 @@ int main()
   bool ret = true;
   getcwd(buf,sizeof(buf)); 
   std::string path=std::string(buf);
-  std::string ddsxml = "file://"+path+"/config/dds_local.xml";
+  std::string ddsxml = "file://"+path+"/config/dds.xml";
   setenv("CYCLONEDDS_URI",ddsxml.c_str(),1);
   printf("cur path is %s\n",path.c_str());
   legged::HighController highcontroller;
