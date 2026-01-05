@@ -302,7 +302,7 @@ namespace legged
     //     }
     //   }  
     ControlCmd action = ControlCmd::DEFAULT;
-    cmd.x = 0.0;
+    cmd.x = 0.5;
     cmd.y=0;
     cmd.yaw =0.0;
     if(key_updown[Key2]== 0  && key_updown[Key5] ==1 &&(key_inuse[Key5] == 0))
@@ -391,7 +391,7 @@ int main()
   bool ret = true;
   getcwd(buf,sizeof(buf)); 
   std::string path=std::string(buf);
-  std::string ddsxml = "file://"+path+"/config/dds_local.xml";
+  std::string ddsxml = "file://"+path+"/config/dds.xml";
   setenv("CYCLONEDDS_URI",ddsxml.c_str(),1);
   printf("cur path is %s\n",path.c_str());
   legged::HighController highcontroller;

@@ -12,6 +12,10 @@
 
 namespace legged
 {
+    DataBuffer<std::array<MotorCmd,18>> motor_cmd_buffer_;
+    DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+    DataBuffer<joydata> joy_buffer_;
+    DataBuffer<NingImuData> imu_buffer_;
   //Controllerbase controllerbase;
    LowController* LowController::instance = nullptr;
 
@@ -177,7 +181,7 @@ namespace legged
     instance = this;
     
     RobotSetMode::SetMode cmode;
-    cmode.mode(1);
+    cmode.mode(2);
     ddswrapper.publishModeData(cmode);
     ddswrapper.subscribeRobotStatus([] (const  RobotStatus::StatusData& ddsdata){
       std::array<MotorState,18>   data;
@@ -1157,7 +1161,7 @@ int main()
   setenv("CYCLONEDDS_URI",ddsxml.c_str(),1);
   printf("cur path is %s\n",path.c_str());
   legged::LowController lowcontroller;
-  lowcontroller.init(legged::ControlMode::LOWMODE);
+  lowcontroller.init(legged::ControlMode::USERMODE);
   #ifdef RK3588
   lowcontroller.loadrknnmodel(path+"/policy");      
   #else
