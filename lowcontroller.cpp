@@ -181,7 +181,12 @@ namespace legged
     instance = this;
     
     RobotSetMode::SetMode cmode;
-    cmode.mode(2);
+    if (mode == ControlMode::HIGHMODE) {
+      cmode.mode(1);
+    } else if (mode == ControlMode::LOWMODE) {
+      cmode.mode(2);
+    }
+    //cmode.mode(2);
     ddswrapper.publishModeData(cmode);
     ddswrapper.subscribeRobotStatus([] (const  RobotStatus::StatusData& ddsdata){
       std::array<MotorState,18>   data;
@@ -1161,7 +1166,7 @@ int main()
   setenv("CYCLONEDDS_URI",ddsxml.c_str(),1);
   printf("cur path is %s\n",path.c_str());
   legged::LowController lowcontroller;
-  lowcontroller.init(legged::ControlMode::USERMODE);
+  lowcontroller.init(legged::ControlMode::LOWMODE);
   #ifdef RK3588
   lowcontroller.loadrknnmodel(path+"/policy");      
   #else
